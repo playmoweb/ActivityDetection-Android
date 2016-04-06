@@ -6,9 +6,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -19,6 +20,8 @@ import butterknife.ButterKnife;
  * @author Playmoweb
  */
 public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ActivityViewHolder> {
+
+    private final static SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.FRENCH);
 
     private List<DatedActivity> datedActivityList = new ArrayList<>();
 
@@ -64,7 +67,7 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.Activi
         public void setDatedActivity(DatedActivity datedActivity) {
             activityType.setText(datedActivity.getType());
             activityConfidence.setText(datedActivity.getConfidence() + "%");
-            activityDate.setText(DateFormat.getDateTimeInstance().format(datedActivity.date));
+            activityDate.setText(sdf.format(datedActivity.date));
         }
     }
 }
