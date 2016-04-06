@@ -25,6 +25,11 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.Activi
 
     private List<DatedActivity> datedActivityList = new ArrayList<>();
 
+    public void setList(List<DatedActivity> datedActivityList) {
+        this.datedActivityList = datedActivityList;
+        notifyDataSetChanged();
+    }
+
     public void addItem(DatedActivity datedActivity) {
         datedActivityList.add(datedActivity);
         notifyDataSetChanged();

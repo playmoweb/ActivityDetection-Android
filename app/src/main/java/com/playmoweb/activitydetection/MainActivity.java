@@ -1,6 +1,13 @@
 package com.playmoweb.activitydetection;
 
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -11,19 +18,18 @@ import com.google.android.gms.location.ActivityRecognitionResult;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import rx.functions.Action1;
 
-public class MainActivity extends AppCompatActivity implements MainView {
+public class MainActivity extends AppCompatActivity {
 
     @Bind(R.id.activitiesRecyclerView)
     RecyclerView activitiesRecyclerView;
 
     private ActivityAdapter activityAdapter;
 
-    private MainPresenter mPresenter;
+    ActivityDetectionService mService;
 
-    public MainActivity() {
-        mPresenter = new MainPresenter(this);
-    }
+    Intent serviceIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,8 +37,15 @@ public class MainActivity extends AppCompatActivity implements MainView {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         initRecyclerView();
-        mPresenter.attachView(this);
-        mPresenter.startObserveActivities();
+
+        serviceIntent = ActivityDetectionService.getStartIntent(this);
+        startService(serviceIntent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        bindService(serviceIntent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     private void initRecyclerView() {
@@ -43,19 +56,36 @@ public class MainActivity extends AppCompatActivity implements MainView {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        unbindService(mConnection);
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-        mPresenter.detachView();
         ButterKnife.unbind(this);
     }
 
-    @Override
-    public void showError(Throwable throwable) {
-        Toast.makeText(this, throwable.getMessage(), Toast.LENGTH_SHORT).show();
-    }
+    private ServiceConnection mConnection = new ServiceConnection() {
 
-    @Override
-    public void showDetectedActivity(DatedActivity datedActivity) {
-        activityAdapter.addItem(datedActivity);
-    }
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            // We've bound to the running Service, cast the IBinder and get instance
+            ActivityDetectionService.LocalBinder binder = (ActivityDetectionService.LocalBinder) service;
+            mService = binder.getService();
+            mService.getObservable().subscribe(new Action1<DatedActivity>() {
+                @Override
+                public void call(DatedActivity datedActivity) {
+                    activityAdapter.addItem(datedActivity);
+                }
+            });
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mService = null;
+        }
+    };
 }
